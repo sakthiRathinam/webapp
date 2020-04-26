@@ -3,7 +3,7 @@ from django.db import models
 # Create your models here.
 class Customer(models.Model):
 	name = models.CharField(max_length=50,null=True)
-	phone = models.CharField(max_length=50)
+	phone = models.CharField(max_length=50,null=True)
 	email = models.EmailField(null=True)
 	Date_created = models.DateTimeField(auto_now_add=True,null=True)
 
@@ -19,8 +19,8 @@ class Product(models.Model):
 		('Indoor','Indoor'),('outdoor','outdoor'))
 	name = models.CharField(max_length=50,null=True)
 	price=models.FloatField(null=True)
-	category = models.CharField(max_length=50,choices=CATEGORY)
-	description = models.TextField()
+	category = models.CharField(max_length=50,choices=CATEGORY,null=True)
+	description = models.TextField(null=True)
 	Date_created=models.DateTimeField(auto_now_add=True,null=True)
 	tags=models.ManyToManyField(Tag)
 
@@ -34,6 +34,7 @@ class Order(models.Model):
 	product=models.ForeignKey(Product,null=True,on_delete=models.SET_NULL)
 	Date_created=models.DateTimeField(auto_now_add=True,null=True)
 	status=models.CharField(max_length=200,null=True,choices=STATUS)
+	note=models.CharField(max_length=200,null=True)
 
 	def __str__(self):
 		return self.product.name
