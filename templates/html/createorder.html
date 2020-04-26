@@ -1,0 +1,19 @@
+{% extends 'html/main.html' %}
+{% load static %}
+{% block content %}
+	<div class="row">
+		<div class="col-md">
+			<div class="card card-body">
+				<form action="" method="POST">
+					{% csrf_token %}
+					{{form.management_form}}
+					{% for field in form %}
+						{{field}}
+						<hr>
+					{% endfor %}
+					<input type="submit" name="save">
+				</form>
+			</div>
+		</div>
+	</div>
+{% endblock content %}
