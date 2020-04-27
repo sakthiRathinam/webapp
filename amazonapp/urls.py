@@ -11,5 +11,6 @@ urlpatterns = [
 	path('login/',loginPage,name="login"),
 	path('logout/',logoutUser,name='logout'),
 	path('user/',userPage,name='user-page'),
+	path('settings/',accountSettings,name='settings'),
 
 ]

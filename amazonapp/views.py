@@ -1,6 +1,6 @@
 from django.shortcuts import render,redirect
 from .models import *
-from .forms import OrderForm,UserForm
+from .forms import OrderForm,UserForm,CustomerForm
 from django.forms import inlineformset_factory
 from .filters import OrderFilter
 from django.contrib.auth.forms import UserCreationForm
@@ -19,6 +19,7 @@ def registerPage(request):
 			username=form.cleaned_data.get('username')
 			group=Group.objects.get(name='customer')
 			user.groups.add(group)
+			Customer.objects.create(user=user,name=user.username,)
 			messages.success(request,"Account was created successfully" + username)
 			return redirect('login')
 	context={'form':form}
@@ -51,8 +52,14 @@ def home(request):
 	context={'customers':customers,'orders':orders,'total_customers':total_customers,'total_orders':total_orders,
 	'delivered':delivered,'pending':pending}
 	return render(request, 'html/dashboard.html',context)
+@login_required(login_url='login')
+@allowed_users(allowed_roles=['customer'])
 def userPage(request):
-	context={}
+	orders=request.user.customer.order_set.all()
+	total_orders=orders.count()
+	delivered=orders.filter(status='Delivered').count()
+	pending=orders.filter(status='pending').count()
+	context={'orders':orders,'total_orders':total_orders,'delivered':delivered,'pending':pending}
 	return render(request,'html/userpage.html',context)
 @login_required(login_url='login')
 @allowed_users(allowed_roles=['admin'])
@@ -105,3 +112,14 @@ def deleteOrder(request,pk):
 		return redirect('/')
 	context={'item':item}
 	return render(request,'html/deleteorder.html',context)
+@login_required(login_url='login')
+@allowed_users(allowed_roles=['customer'])
+def accountSettings(request):
+	customer=request.user.customer
+	form=CustomerForm(instance=customer)
+	if request.method=='POST':
+		form=CustomerForm(request.POST,request.FILES,instance=customer)
+		if form.is_valid():
+			form.save()
+	context={'form':form}
+	return render(request,'html/accountsettings.html',context)
