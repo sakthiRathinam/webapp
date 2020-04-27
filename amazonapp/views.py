@@ -17,9 +17,6 @@ def registerPage(request):
 		if form.is_valid():
 			user=form.save()
 			username=form.cleaned_data.get('username')
-			group=Group.objects.get(name='customer')
-			user.groups.add(group)
-			Customer.objects.create(user=user,name=user.username,)
 			messages.success(request,"Account was created successfully" + username)
 			return redirect('login')
 	context={'form':form}
@@ -123,3 +120,14 @@ def accountSettings(request):
 			form.save()
 	context={'form':form}
 	return render(request,'html/accountsettings.html',context)
+@login_required(login_url='login')
+@allowed_users(allowed_roles=['customer'])
+def createOrderr(request):
+	form=OrderForm()
+	if request.method=="POST":
+		form=OrderForm(request.POST)
+		if form.is_valid():
+			form.save()
+			return redirect('home')
+	context={'form':form}
+	return render(request,'html/createorder1.html',context)
