@@ -6,38 +6,41 @@ from .filters import OrderFilter
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.contrib.auth import authenticate,login,logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import Group
+from .decorators import *
+@unauthenticated_user
 def registerPage(request):
-	if request.user.is_authenticated:
-		return redirect('home')
-	else:
-		form=UserForm()
-		if request.method=='POST':
-			form=UserForm(request.POST)
-			if form.is_valid():
-				form.save()
-				user=form.cleaned_data.get('username')
-				messages.success(request,"Account was created successfully" + user)
-				return redirect('login')
-		context={'form':form}
-		return render(request,'html/register.html',context)
+	form=UserForm()
+	if request.method=='POST':
+		form=UserForm(request.POST)
+		if form.is_valid():
+			user=form.save()
+			username=form.cleaned_data.get('username')
+			group=Group.objects.get(name='customer')
+			user.groups.add(group)
+			messages.success(request,"Account was created successfully" + username)
+			return redirect('login')
+	context={'form':form}
+	return render(request,'html/register.html',context)
+@unauthenticated_user
 def loginPage(request):
-	if request.user.is_authenticated:
-		return redirect('home')
-	else:
-		if request.method=="POST":
-			username=request.POST.get('username')
-			password=request.POST.get('password')
-			user=authenticate(request,username=username,password=password)
-			if user is not None:
-				login(request,user)
-				return redirect('home')
-			else:
-				messages.info(request,'Username or password is incorrect')
-		context={}
-		return render(request,'html/login.html',context)
+	if request.method=="POST":
+		username=request.POST.get('username')
+		password=request.POST.get('password')
+		user=authenticate(request,username=username,password=password)
+		if user is not None:
+			login(request,user)
+			return redirect('home')
+		else:
+			messages.info(request,'Username or password is incorrect')
+	context={}
+	return render(request,'html/login.html',context)
 def logoutUser(request):
 	logout(request)
 	return redirect('login')		
+@login_required(login_url='login')
+@admin_only
 def home(request):
 	customers=Customer.objects.all()
 	orders=Order.objects.all()
@@ -48,6 +51,11 @@ def home(request):
 	context={'customers':customers,'orders':orders,'total_customers':total_customers,'total_orders':total_orders,
 	'delivered':delivered,'pending':pending}
 	return render(request, 'html/dashboard.html',context)
+def userPage(request):
+	context={}
+	return render(request,'html/userpage.html',context)
+@login_required(login_url='login')
+@allowed_users(allowed_roles=['admin'])
 def customers(request,pk):
 	customer=Customer.objects.get(id=pk)
 	orders=customer.order_set.all()
@@ -56,10 +64,14 @@ def customers(request,pk):
 	orders=myFilter.qs
 	context={'customer':customer,'orders':orders,'order_count':order_count,'myFilter':myFilter}
 	return render(request, 'html/customers.html',context)
+@login_required(login_url='login')
+@allowed_users(allowed_roles=['admin'])
 def products(request):
 	products=Product.objects.all()
 	context={'products':products}
 	return render(request,'html/products.html',context)
+@login_required(login_url='login')
+@allowed_users(allowed_roles=['admin'])
 def createOrder(request,pk):
 	#form=OrderForm()
 	OrderFormSet=inlineformset_factory(Customer,Order,fields=('product','status'),extra=7)
@@ -73,6 +85,8 @@ def createOrder(request,pk):
 			return redirect('/')
 	context={'form':formset}
 	return render(request,'html/createorder.html',context)
+@login_required(login_url='login')
+@allowed_users(allowed_roles=['admin'])
 def updateOrder(request,pk):
 	order=Order.objects.get(id=pk)
 	form=OrderForm(instance=order)
@@ -82,6 +96,8 @@ def updateOrder(request,pk):
 		return redirect('/')
 	context={'form':form}
 	return render(request,'html/createorder.html',context)
+@login_required(login_url='login')
+@allowed_users(allowed_roles=['admin'])
 def deleteOrder(request,pk):
 	item=Order.objects.get(id=pk)
 	if request.method=="POST":
